@@ -1,3 +1,3 @@
 Seq(
-  "com.geirsson" % "sbt-scalafmt" % "0.6.8"
+  "com.lucidchart" % "sbt-scalafmt-coursier" % "1.10"
 ).map(addSbtPlugin)
