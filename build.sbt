@@ -12,19 +12,25 @@ lazy val scalauto = project
   .settings(
     libraryDependencies ++= {
       Seq(
-        "org.boofcv" % "core" % "0.26"
+        "org.boofcv" % "boofcv-core" % "0.27"
       )
     }
   )
 
-lazy val `scalauto-android` = project
+lazy val scalandroid = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= {
       Seq(
         // need raw `execute` for screencap -p to work
-        "com.github.vidstige" % "jadb" % "a65c81343f7548992c91dcca7362131c2d27e824"
+        "com.github.vidstige"    % "jadb"   % "4332cd6ab836736b69fbb8ebbeb6cd1becd4a422",
+        "io.monix"               %% "monix" % "2.3.0",
+        "net.sourceforge.tess4j" % "tess4j" % "3.4.0"
       )
     }
   )
   .dependsOn(scalauto)
+
+lazy val root = project
+  .in(file("."))
+  .aggregate(scalauto, scalandroid)
