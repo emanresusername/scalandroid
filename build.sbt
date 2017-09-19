@@ -4,7 +4,8 @@ scalafmtOnCompile in ThisBuild := true
 lazy val commonSettings = Seq(
   organization := "my.will.be.done",
   resolvers += "jitpack" at "https://jitpack.io",
-  scalacOptions ++= Seq("-deprecation", "-feature", "-Xlint")
+  scalacOptions ++= Seq("-deprecation", "-feature", "-Xlint"),
+  version := "0.0.1"
 )
 
 lazy val scalauto = project

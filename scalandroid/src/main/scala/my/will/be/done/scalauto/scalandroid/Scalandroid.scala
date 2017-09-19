@@ -6,7 +6,7 @@ import scala.io.Source
 import java.io.{InputStream, File, FileOutputStream}
 import net.sourceforge.tess4j.Tesseract
 import scala.concurrent.duration.{FiniteDuration, Duration}
-import my.will.be.done.scalauto.{TemplateMatcher, TemplateMatch}
+import my.will.be.done.scalauto.{TemplateMatcher, TemplateMatch, Point}
 import monix.reactive.Observable
 
 class Scalandroid(jadbDevice: JadbDevice, tessdataPrefix: String) {
@@ -46,49 +46,44 @@ class Scalandroid(jadbDevice: JadbDevice, tessdataPrefix: String) {
     tesseract.doOCR(screenshot)
   }
 
-  def tap(x: Double, y: Double): InputStream = {
-    input("tap", x.toString, y.toString)
+  def tap(point: Point): InputStream = {
+    input("tap", point.x.toString, point.y.toString)
   }
 
   def text(text: String): InputStream = {
     input("text", text)
   }
 
-  def swipe(x1: Double,
-            y1: Double,
-            x2: Double,
-            y2: Double,
-            duration: FiniteDuration): InputStream = {
+  def swipe(from: Point, to: Point, duration: FiniteDuration): InputStream = {
     input("swipe",
-          x1.toString,
-          y1.toString,
-          x2.toString,
-          y2.toString,
+          from.x.toString,
+          from.y.toString,
+          to.x.toString,
+          to.y.toString,
           duration.toMillis.toString)
   }
-  def swipeLeft(x: Double,
-                y: Double,
+  def swipeLeft(from: Point,
                 distance: Int,
                 duration: FiniteDuration): InputStream = {
-    swipe(x1 = x, y1 = y, x2 = x - distance, y2 = y, duration = duration)
+    swipe(from = from, to = from left distance, duration = duration)
   }
-  def swipeRight(x: Double,
-                 y: Double,
+
+  def swipeRight(from: Point,
                  distance: Int,
                  duration: FiniteDuration): InputStream = {
-    swipe(x1 = x, y1 = y, x2 = x + distance, y2 = y, duration = duration)
+    swipe(from = from, to = from right distance, duration = duration)
   }
-  def swipeUp(x: Double,
-              y: Double,
+
+  def swipeUp(from: Point,
               distance: Int,
               duration: FiniteDuration): InputStream = {
-    swipe(x1 = x, y1 = y, x2 = x, y2 = y - distance, duration = duration)
+    swipe(from = from, to = from up distance, duration = duration)
   }
-  def swipeDown(x: Double,
-                y: Double,
+
+  def swipeDown(from: Point,
                 distance: Int,
                 duration: FiniteDuration): InputStream = {
-    swipe(x1 = x, y1 = y, x2 = x, y2 = y + distance, duration = duration)
+    swipe(from = from, to = from down distance, duration = duration)
   }
 
   def templateMatches(template: File, maxMatches: Int): Seq[TemplateMatch] = {
@@ -112,8 +107,10 @@ class Scalandroid(jadbDevice: JadbDevice, tessdataPrefix: String) {
       rectangle = templateMatch.rectangle
     } yield {
       tap(
-        x = rectangle.getCenterX,
-        y = rectangle.getCenterY
+        Point(
+          rectangle.getCenterX,
+          rectangle.getCenterY
+        )
       )
     }
   }
