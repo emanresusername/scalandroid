@@ -54,6 +54,14 @@ class Scalandroid(jadbDevice: JadbDevice, tessdataPrefix: String) {
     input("keyevent", keycode.code.toString)
   }
 
+  def monkey(args: String*): InputStream = {
+    execute("monkey", args: _*)
+  }
+
+  def launch(packageName: String): InputStream = {
+    monkey("-p", packageName, "-c", "android.intent.category.LAUNCHER", "1")
+  }
+
   def swipe(from: Point, to: Point, duration: FiniteDuration): InputStream = {
     input("swipe",
           from.x.toString,
