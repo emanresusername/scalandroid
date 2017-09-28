@@ -13,12 +13,8 @@ class Scalandroid(jadbDevice: JadbDevice, tessdataPrefix: String) {
   val tesseract = new Tesseract()
   tesseract.setDatapath(tessdataPrefix)
 
-  def executeShell(command: String, args: String*): InputStream = {
-    jadbDevice.executeShell(command, args: _*)
-  }
-
   def input(args: String*): InputStream = {
-    executeShell("input", args: _*)
+    execute("input", args: _*)
   }
 
   def execute(command: String, args: String*): InputStream = {
@@ -36,7 +32,7 @@ class Scalandroid(jadbDevice: JadbDevice, tessdataPrefix: String) {
   val screenSizeRegex = """Override size: (\d+)x(\d+)""".r.unanchored
 
   def screenSize: Dimension = {
-    Source.fromInputStream(executeShell("wm", "size")).mkString match {
+    Source.fromInputStream(execute("wm", "size")).mkString match {
       case screenSizeRegex(width, height) ⇒
         new Dimension(width.toInt, height.toInt)
     }
