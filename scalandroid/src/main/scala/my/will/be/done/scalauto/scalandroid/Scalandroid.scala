@@ -54,6 +54,10 @@ class Scalandroid(jadbDevice: JadbDevice, tessdataPrefix: String) {
     input("text", text)
   }
 
+  def keycode(keycode: Keycode): InputStream = {
+    input("keyevent", keycode.code.toString)
+  }
+
   def swipe(from: Point, to: Point, duration: FiniteDuration): InputStream = {
     input("swipe",
           from.x.toString,
