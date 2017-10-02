@@ -1,17 +1,16 @@
-package my.will.be.done.scalauto.scalandroid
+package my.will.be.done.scalandroid
 
-import se.vidstige.jadb.{Stream, JadbDevice, JadbConnection}
+import se.vidstige.jadb.{Stream, JadbDevice, JadbConnection, RemoteFile}
+import se.vidstige.jadb.managers.PackageManager
 import java.awt.Dimension
 import scala.io.Source
 import java.io.{InputStream, File, FileOutputStream}
-import net.sourceforge.tess4j.Tesseract
-import scala.concurrent.duration.{FiniteDuration, Duration}
-import my.will.be.done.scalauto.{TemplateMatcher, TemplateMatch, Point}
-import monix.reactive.Observable
+import java.nio.file.{Path, Files}
+import scala.concurrent.duration.FiniteDuration
+import scala.collection.JavaConverters._
 
-class Scalandroid(jadbDevice: JadbDevice, tessdataPrefix: String) {
-  val tesseract = new Tesseract()
-  tesseract.setDatapath(tessdataPrefix)
+class Scalandroid(val jadbDevice: JadbDevice) {
+  val packageManager = new PackageManager(jadbDevice)
 
   def input(args: String*): InputStream = {
     execute("input", args: _*)
@@ -19,6 +18,30 @@ class Scalandroid(jadbDevice: JadbDevice, tessdataPrefix: String) {
 
   def execute(command: String, args: String*): InputStream = {
     jadbDevice.execute(command, args: _*)
+  }
+
+  def push(local: File, remote: RemoteFile): Unit = {
+    jadbDevice.push(local, remote)
+  }
+
+  def pull(remote: RemoteFile): Path = {
+    val local = Files.createTempFile(null, null)
+    jadbDevice.pull(remote, local.toFile)
+    local
+  }
+
+  def uiautomatorDump: Path = {
+    val remotePath = s"/sdcard/tmp/${System.currentTimeMillis}.xml"
+    val remoteFile = new RemoteFile(remotePath)
+    execute(s"uiautomator dump $remotePath")
+    val local = pull(remoteFile)
+    try {
+      execute("rm", remotePath)
+    } catch {
+      case t: Throwable ⇒
+        t.printStackTrace
+    }
+    local
   }
 
   def screenshot: File = {
@@ -38,10 +61,6 @@ class Scalandroid(jadbDevice: JadbDevice, tessdataPrefix: String) {
     }
   }
 
-  def ocr: String = {
-    tesseract.doOCR(screenshot)
-  }
-
   def tap(point: Point): InputStream = {
     input("tap", point.x.toString, point.y.toString)
   }
@@ -58,8 +77,15 @@ class Scalandroid(jadbDevice: JadbDevice, tessdataPrefix: String) {
     execute("monkey", args: _*)
   }
 
-  def launch(packageName: String): InputStream = {
-    monkey("-p", packageName, "-c", "android.intent.category.LAUNCHER", "1")
+  def packages: Seq[Package] =
+    packageManager.getPackages.asScala.map(Package(_))
+
+  def launch(pkg: Package): Unit = {
+    packageManager.launch(pkg.pkg)
+  }
+
+  def startActivity(pkg: Package, activity: String): InputStream = {
+    execute("am", "start", s"${pkg.name}/.$activity")
   }
 
   def swipe(from: Point, to: Point, duration: FiniteDuration): InputStream = {
@@ -93,53 +119,10 @@ class Scalandroid(jadbDevice: JadbDevice, tessdataPrefix: String) {
                 duration: FiniteDuration): InputStream = {
     swipe(from = from, to = from down distance, duration = duration)
   }
-
-  def templateMatches(template: File, maxMatches: Int): Seq[TemplateMatch] = {
-    TemplateMatcher.templateMatches(
-      image = screenshot,
-      template = template,
-      maxMatches = maxMatches
-    )
-  }
-
-  def tapMultiple(template: File,
-                  tapInterval: FiniteDuration,
-                  maxTaps: Int,
-                  score: Double): Observable[InputStream] = {
-    for {
-      templateMatch ← Observable
-        .fromIterable(
-          templateMatches(template = template, maxMatches = maxTaps))
-        .filter(_.score >= score)
-        .delayOnNext(tapInterval)
-      rectangle = templateMatch.rectangle
-    } yield {
-      tap(
-        Point(
-          rectangle.getCenterX,
-          rectangle.getCenterY
-        )
-      )
-    }
-  }
-
-  def tapOne(template: File): Observable[InputStream] = {
-    tapMultiple(template = template,
-                tapInterval = Duration.Zero,
-                maxTaps = 1,
-                score = 0)
-  }
-
-  def isOnScreen(template: File, score: Double = 0): Boolean = {
-    templateMatches(template, 1).exists(_.score >= score)
-  }
 }
 
 object Scalandroid {
   def apply(): Scalandroid = {
-    new Scalandroid(
-      jadbDevice = new JadbConnection().getAnyDevice,
-      tessdataPrefix = "/home/linuxbrew/.linuxbrew/share/tessdata"
-    )
+    new Scalandroid(jadbDevice = new JadbConnection().getAnyDevice)
   }
 }
