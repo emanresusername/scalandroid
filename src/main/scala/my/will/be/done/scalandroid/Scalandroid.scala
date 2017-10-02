@@ -1,13 +1,14 @@
 package my.will.be.done.scalandroid
 
-import se.vidstige.jadb.{Stream, JadbDevice, JadbConnection, RemoteFile}
+import se.vidstige.jadb.{Stream, JadbDevice, JadbConnection}
 import se.vidstige.jadb.managers.PackageManager
 import java.awt.Dimension
 import scala.io.Source
+import java.nio.file.Files
 import java.io.{InputStream, File, FileOutputStream}
-import java.nio.file.{Path, Files}
 import scala.concurrent.duration.FiniteDuration
 import scala.collection.JavaConverters._
+import scala.io.Source
 
 class Scalandroid(val jadbDevice: JadbDevice) {
   val packageManager = new PackageManager(jadbDevice)
@@ -20,28 +21,30 @@ class Scalandroid(val jadbDevice: JadbDevice) {
     jadbDevice.execute(command, args: _*)
   }
 
-  def push(local: File, remote: RemoteFile): Unit = {
-    jadbDevice.push(local, remote)
+  def push(local: Path.Local, remote: Path.Remote): Unit = {
+    jadbDevice.push(local.file, remote.file)
   }
 
-  def pull(remote: RemoteFile): Path = {
-    val local = Files.createTempFile(null, null)
-    jadbDevice.pull(remote, local.toFile)
+  def pull(remote: Path.Remote): File = {
+    val local = Files.createTempFile(null, null).toFile
+    local.deleteOnExit
+    jadbDevice.pull(remote.file, local)
     local
   }
 
-  def uiautomatorDump: Path = {
-    val remotePath = s"/sdcard/tmp/${System.currentTimeMillis}.xml"
-    val remoteFile = new RemoteFile(remotePath)
-    execute(s"uiautomator dump $remotePath")
-    val local = pull(remoteFile)
-    try {
-      execute("rm", remotePath)
-    } catch {
-      case t: Throwable ⇒
-        t.printStackTrace
+  val uiautomatorDumpRegex = "UI hierchary dumped to: (.+)".r
+  def uiautomatorDump: UiNode = {
+    // TODO: not strictly necessary, but needed to use up cycles here anyway or it would pull before it was done taking a dump
+    val remote = Source
+      .fromInputStream(execute("uiautomator", "dump", "--verbose"))
+      .mkString
+      .trim match {
+      case uiautomatorDumpRegex(path) ⇒
+        Path.Remote(path)
     }
-    local
+    val local = pull(remote)
+    execute("rm", remote.path)
+    UiNode(local)
   }
 
   def screenshot: File = {
@@ -80,8 +83,9 @@ class Scalandroid(val jadbDevice: JadbDevice) {
   def packages: Seq[Package] =
     packageManager.getPackages.asScala.map(Package(_))
 
-  def launch(pkg: Package): Unit = {
-    packageManager.launch(pkg.pkg)
+  def launch(pkg: Package): InputStream = {
+    // packageManager.launch(pkg.pkg) // TODO: doesn't work for some reason
+    monkey("-p", pkg.name, "-c", "android.intent.category.LAUNCHER", "1")
   }
 
   def startActivity(pkg: Package, activity: String): InputStream = {
