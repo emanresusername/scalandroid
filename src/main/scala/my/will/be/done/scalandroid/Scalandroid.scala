@@ -80,15 +80,15 @@ class Scalandroid(val jadbDevice: JadbDevice) {
     execute("monkey", args: _*)
   }
 
-  def packages: Seq[Package] =
-    packageManager.getPackages.asScala.map(Package(_))
+  def packages: Seq[Pkg] =
+    packageManager.getPackages.asScala.map(Pkg(_))
 
-  def launch(pkg: Package): InputStream = {
+  def launch(pkg: Pkg): InputStream = {
     // packageManager.launch(pkg.pkg) // TODO: doesn't work for some reason
     monkey("-p", pkg.name, "-c", "android.intent.category.LAUNCHER", "1")
   }
 
-  def startActivity(pkg: Package, activity: String): InputStream = {
+  def startActivity(pkg: Pkg, activity: String): InputStream = {
     execute("am", "start", s"${pkg.name}/.$activity")
   }
 
