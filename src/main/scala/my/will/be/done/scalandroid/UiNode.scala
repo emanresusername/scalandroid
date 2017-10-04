@@ -7,10 +7,10 @@ import java.awt.Rectangle
 case class UiNode(
     index: Int,
     text: String,
-    `resource-id`: String,
+    resourceId: String,
     `class`: String,
-    `package`: Pkg,
-    `content-desc`: String,
+    pkg: Pkg,
+    contentDescription: String,
     checkable: Boolean,
     checked: Boolean,
     clickable: Boolean,
@@ -18,7 +18,7 @@ case class UiNode(
     focusable: Boolean,
     focused: Boolean,
     scrollable: Boolean,
-    `long-clickable`: Boolean,
+    longClickable: Boolean,
     password: Boolean,
     selected: Boolean,
     bounds: Rectangle,
@@ -51,6 +51,29 @@ case class UiNode(
       .takeWhile(_.nonEmpty)
       .flatten
   }
+
+  private[this] def resourceFilter(
+      resourceIds: Seq[String]): UiNode ⇒ Boolean = {
+    resourceIds match {
+      case Nil ⇒
+        _ ⇒
+          false
+      case Seq(one) ⇒
+        _.resourceId.equals(one)
+      case ids ⇒
+        val idSet = ids.toSet
+        node: UiNode ⇒
+          idSet.contains(node.resourceId)
+    }
+  }
+
+  def findResource(resourceIds: String*): Option[UiNode] = {
+    find(resourceFilter(resourceIds))
+  }
+
+  def filterResources(resourceIds: String*): Traversable[UiNode] = {
+    filter(resourceFilter(resourceIds))
+  }
 }
 
 object UiNode {
@@ -63,22 +86,22 @@ object UiNode {
   def apply(node: Node, parent: Option[UiNode]): UiNode = {
     val BoundsRegex(x1, y1, x2, y2) = node \@ "bounds"
     val kid = UiNode(
-      `index` = (node \@ "index").toInt,
-      `text` = (node \@ "text"),
-      `resource-id` = (node \@ "resource-id"),
+      index = (node \@ "index").toInt,
+      text = (node \@ "text"),
+      resourceId = (node \@ "resource-id"),
       `class` = (node \@ "class"),
-      `package` = Pkg(node \@ "package"),
-      `content-desc` = (node \@ "content-desc"),
-      `checkable` = (node \@ "checkable").toBoolean,
-      `checked` = (node \@ "checked").toBoolean,
-      `clickable` = (node \@ "clickable").toBoolean,
-      `enabled` = (node \@ "enabled").toBoolean,
-      `focusable` = (node \@ "focusable").toBoolean,
-      `focused` = (node \@ "focused").toBoolean,
-      `scrollable` = (node \@ "scrollable").toBoolean,
-      `long-clickable` = (node \@ "long-clickable").toBoolean,
-      `password` = (node \@ "password").toBoolean,
-      `selected` = (node \@ "selected").toBoolean,
+      pkg = Pkg(node \@ "package"),
+      contentDescription = (node \@ "content-desc"),
+      checkable = (node \@ "checkable").toBoolean,
+      checked = (node \@ "checked").toBoolean,
+      clickable = (node \@ "clickable").toBoolean,
+      enabled = (node \@ "enabled").toBoolean,
+      focusable = (node \@ "focusable").toBoolean,
+      focused = (node \@ "focused").toBoolean,
+      scrollable = (node \@ "scrollable").toBoolean,
+      longClickable = (node \@ "long-clickable").toBoolean,
+      password = (node \@ "password").toBoolean,
+      selected = (node \@ "selected").toBoolean,
       bounds = new Rectangle(x1.toInt,
                              y1.toInt,
                              x2.toInt - x1.toInt,

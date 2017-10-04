@@ -68,6 +68,26 @@ class Scalandroid(val jadbDevice: JadbDevice) {
     input("tap", point.x.toString, point.y.toString)
   }
 
+  def tap(node: UiNode): InputStream = {
+    tap(node.center)
+  }
+
+  def tapResource(resourceIds: String*): Option[InputStream] = {
+    uiautomatorDump.findResource(resourceIds: _*).map(tap)
+  }
+
+  /**
+    * @return traversable tap generators. NOTE: taps not executed. assuming caller will implement delays between taps
+    **/
+  def resourceTaps(resourceIds: String*): Traversable[Function0[InputStream]] = {
+    uiautomatorDump
+      .filterResources(resourceIds: _*)
+      .map(node ⇒
+        new Function0[InputStream] {
+          def apply(): InputStream = tap(node)
+      })
+  }
+
   def text(text: String): InputStream = {
     input("text", text)
   }

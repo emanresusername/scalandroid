@@ -4,6 +4,8 @@ scalafmtOnCompile in ThisBuild := true
 organization := "my.will.be.done"
 resolvers += "jitpack" at "https://jitpack.io"
 scalacOptions ++= Seq("-deprecation", "-feature", "-Xlint")
+licenses := Seq(
+  "GPL" → url("https://github.com/emanresusername/scalandroid/license.md"))
 
 libraryDependencies ++= {
   Seq(
