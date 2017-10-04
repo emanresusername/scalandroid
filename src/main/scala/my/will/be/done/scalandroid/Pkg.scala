@@ -12,7 +12,7 @@ object Pkg {
     Pkg(name)
   }
 
-  implicit def apply(`pacakge`: Package): Pkg = {
-    Pkg(`package`.toString)
+  implicit def apply(pkg: Package): Pkg = {
+    Pkg(pkg.toString)
   }
 }
