@@ -5,3 +5,4 @@ nohup.out
 /ensime.sbt
 /.idea/
 /.sbt-hydra-history
+*.log
