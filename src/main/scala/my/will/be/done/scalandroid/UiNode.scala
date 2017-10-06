@@ -23,7 +23,7 @@ case class UiNode(
     selected: Boolean,
     bounds: Rectangle,
     parent: Option[UiNode],
-    kids: Seq[UiNode]
+    var kids: Seq[UiNode]
 ) extends Traversable[UiNode] {
   def foreachKid[U](parent: UiNode, kids: Seq[UiNode], f: UiNode ⇒ U): Unit = {
     kids.foreach(f)
@@ -109,8 +109,7 @@ object UiNode {
       parent = parent,
       kids = Nil
     )
-    kid.copy(
-      kids = (node \ Tag).map(UiNode(_, Option(kid)))
-    )
+    kid.kids = (node \ Tag).map(UiNode(_, Option(kid)))
+    kid
   }
 }
