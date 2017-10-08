@@ -12,34 +12,19 @@ trait Unicoid extends Scalandroid {
     setInputMethod("com.android.adbkeyboard/.AdbIME")
   }
 
-  def inputUnicode(unicode: String) =
-    activityBroadcast("ADB_INPUT_TEXT", "--es", "msg", unicode)
-  // TODO: things kept breaking with some ascii characters, simple \escapes didn't fix
-  def inputAscii(ascii: String) = this.text(ascii)
-  val asciiFilter: Char ⇒ Boolean = _ < 128
-  val nonAsciiFilter: Char ⇒ Boolean = _ > 128
-
-  def unicodeText(text: String): List[(String, String)] = {
-    for {
-      (span, notAscii, _) ← Iterator
-        .iterate(("", asciiFilter(text.head), text)) {
-          case (lastSpan, isAscii, rest) =>
-            val filter = if (isAscii) asciiFilter else nonAsciiFilter
-            val (span, nextRest) = rest.span(filter)
-            (span, !isAscii, nextRest)
-        }
-        .drop(1)
-        .takeWhile(_._1.nonEmpty)
-        .toList
-    } yield {
-      (span → Source // read to make sure one finishes before next starts
-        .fromInputStream(if (notAscii) {
-          inputUnicode(span)
-        } else {
-          inputAscii("'" ++ span.replaceAllLiterally("'", "\\'") ++ "'")
-        })
-        .mkString)
-    }
+  // TODO: less hacky: https://github.com/vidstige/jadb/issues/67
+  def unicodeText(text: String) = {
+    new ProcessBuilder(
+      "adb",
+      "shell",
+      "am",
+      "broadcast",
+      "-a",
+      "ADB_INPUT_TEXT",
+      "--es",
+      "msg",
+      "'" ++ text.replaceAllLiterally("'", "\\'") ++ "'"
+    ).start
   }
 }
 
