@@ -88,8 +88,39 @@ class Scalandroid(val jadbDevice: JadbDevice) {
       })
   }
 
+  /**
+    * NOTE: unicode characters won't work
+    * @see Unicoid
+    */
   def text(text: String): InputStream = {
     input("text", text)
+  }
+
+  def inputMethod(args: String*): InputStream = {
+    execute("ime", args: _*)
+  }
+
+  def setInputMethod(name: String): InputStream = {
+    inputMethod("set", name)
+  }
+
+  def listInputMethods: InputStream = {
+    inputMethod("list", "-a")
+  }
+
+  def listInputMethodNames: Iterator[String] = {
+    Source.fromInputStream(listInputMethods).getLines.collect {
+      case line if !line.startsWith(" ") ⇒
+        line.stripSuffix(":")
+    }
+  }
+
+  def activityManager(args: String*) = {
+    execute("am", args: _*)
+  }
+
+  def activityBroadcast(activity: String, args: String*) = {
+    activityManager(Seq("broadcast", "-a", activity) ++ args: _*)
   }
 
   def keycode(keycode: Keycode): InputStream = {
