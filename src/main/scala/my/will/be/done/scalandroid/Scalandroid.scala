@@ -123,6 +123,15 @@ class Scalandroid(val jadbDevice: JadbDevice) {
     activityManager(Seq("broadcast", "-a", activity) ++ args: _*)
   }
 
+  def shareUrl(url: String) = {
+    activityManager("start",
+                    "-W",
+                    "-a",
+                    "android.intent.action.VIEW",
+                    "-d",
+                    url)
+  }
+
   def keycode(keycode: Keycode): InputStream = {
     input("keyevent", keycode.code.toString)
   }
