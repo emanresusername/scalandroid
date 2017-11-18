@@ -2,7 +2,6 @@ package my.will.be.done.scalandroid
 
 import se.vidstige.jadb.JadbConnection
 import java.io.InputStream
-import scala.io.Source
 
 /**
   * Scalandroid extensions for inputing unicode text with https://github.com/senzhk/ADBKeyBoard
@@ -23,7 +22,7 @@ trait Unicoid extends Scalandroid {
       "ADB_INPUT_TEXT",
       "--es",
       "msg",
-      "'" ++ text.replaceAllLiterally("'", "\\'") ++ "'"
+      "'" ++ text.replaceAllLiterally("'", "\u2019") ++ "'"
     ).start
   }
 }
